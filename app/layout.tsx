@@ -6,6 +6,7 @@ import { UserProvider } from './context/UserContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
 import { ToastContainer } from './components/ui/Toast';
+import { LoadingOverlay } from './components/ui/LoadingOverlay';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </main>
             </div>
             <ToastContainer />
+            <LoadingOverlay />
           </ProblemsProvider>
         </UserProvider>
       </body>
