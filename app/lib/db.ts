@@ -1,24 +1,31 @@
-import { Pool } from 'pg';
+import { Client } from 'pg';
 
-// Singleton pool — reused across hot-reloads in dev and across requests in prod
-declare global {
-  // eslint-disable-next-line no-var
-  var _pgPool: Pool | undefined;
-}
+/**
+ * Creates a fresh pg Client, runs your callback, then closes the connection.
+ * This is the correct pattern for serverless — no persistent pool.
+ */
+export async function dbQuery(
+  sql: string,
+  params: unknown[] = []
+): Promise<Record<string, unknown>[]> {
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      'DATABASE_URL is not set. Add it to Vercel → Settings → Environment Variables.'
+    );
+  }
 
-function createPool(): Pool {
-  return new Pool({
+  const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 5,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 15_000,
   });
-}
 
-export function getPool(): Pool {
-  if (!global._pgPool) {
-    global._pgPool = createPool();
+  await client.connect();
+  try {
+    const result = await client.query(sql, params);
+    return result.rows;
+  } finally {
+    await client.end().catch(() => {});  // always close
   }
-  return global._pgPool;
 }
